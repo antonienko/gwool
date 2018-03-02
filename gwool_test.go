@@ -1,7 +1,6 @@
 package gwool
 
 import (
-	"fmt"
 	"testing"
 	"time"
 )
@@ -17,7 +16,6 @@ type blockingThenDonePerformer struct {
 
 func (btdp blockingThenDonePerformer) Perform(job GwoolJob) {
 	<-btdp.makeWork
-	fmt.Printf("Performing %v\n", job)
 	btdp.doneChan <- (job).(string)
 }
 

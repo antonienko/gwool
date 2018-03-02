@@ -21,11 +21,11 @@ func (btdp blockingThenDonePerformer) Perform(job GwoolJob) {
 
 func TestCreationCreatesWorkersAndFinishDestroysThem(t *testing.T) {
 	p := NewPool(10, make(chan GwoolJob), emptyPerformer{}, 1*time.Second)
-	if exp, nworkers := 10, p.numWorkers; exp != nworkers {
+	if exp, nworkers := 10, p.NumOfWorkers(); exp != nworkers {
 		t.Errorf("wrong number of workers created: expected %d got %d", exp, nworkers)
 	}
 	p.Finish()
-	if exp, nworkers := 0, p.numWorkers; exp != nworkers {
+	if exp, nworkers := 0, p.NumOfWorkers(); exp != nworkers {
 		t.Errorf("wrong number of workers after finish: expected %d got %d", exp, nworkers)
 	}
 }
@@ -39,7 +39,7 @@ func TestWorkersPerformWorkAndWaitToFinish(t *testing.T) {
 		p.QueueJob("done2")
 		go p.Finish()
 		p.QueueJob("done3")
-		if expected, actual := 3, p.numWorkers; expected != actual {
+		if expected, actual := 3, p.NumOfWorkers(); expected != actual {
 			t.Errorf("expected %d workers, got %d", expected, actual)
 		}
 		close(makeWork)
@@ -72,11 +72,11 @@ func TestWorkersDieAfterTimeoutAndWorkerIsCreatedWhenNoWorkersLeftAndJobAdded(t 
 	p := NewPool(1, make(chan GwoolJob), blockingThenDonePerformer{makeWork, doneChan}, 1*time.Millisecond)
 	go func() {
 		time.Sleep(2 * time.Millisecond)
-		if expected, actual := 0, p.numWorkers; expected != actual {
+		if expected, actual := 0, p.NumOfWorkers(); expected != actual {
 			t.Errorf("expected %d workers, got %d", expected, actual)
 		}
 		p.QueueJob("done1")
-		if expected, actual := 1, p.numWorkers; expected != actual {
+		if expected, actual := 1, p.NumOfWorkers(); expected != actual {
 			t.Errorf("expected %d workers, got %d", expected, actual)
 		}
 		go p.Finish()

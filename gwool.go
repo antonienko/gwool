@@ -11,7 +11,7 @@ type GwoolWorker interface {
 
 type GwoolJob interface{}
 
-type gwool struct {
+type Gwool struct {
 	jobsQueue     chan GwoolJob
 	worker        GwoolWorker
 	workerTimeout time.Duration
@@ -26,8 +26,8 @@ func NewPool(
 	jobsQueue chan GwoolJob,
 	performer GwoolWorker,
 	workerTimeout time.Duration,
-) *gwool {
-	p := &gwool{
+) *Gwool {
+	p := &Gwool{
 		jobsQueue:     jobsQueue,
 		worker:        performer,
 		workerTimeout: workerTimeout,
@@ -39,7 +39,7 @@ func NewPool(
 	return p
 }
 
-func (p *gwool) QueueJob(job GwoolJob) {
+func (p *Gwool) QueueJob(job GwoolJob) {
 	if p.numWorkers == 0 {
 		p.launchWorker()
 	}
@@ -51,7 +51,7 @@ func (p *gwool) QueueJob(job GwoolJob) {
 	}
 }
 
-func (p *gwool) launchWorker() {
+func (p *Gwool) launchWorker() {
 	p.wg.Add(1)
 	p.numWorkers++
 	workerLaunched := make(chan struct{})
@@ -65,7 +65,7 @@ func (p *gwool) launchWorker() {
 	<-workerLaunched
 }
 
-func (p *gwool) acceptWork(workerLaunched chan struct{}) {
+func (p *Gwool) acceptWork(workerLaunched chan struct{}) {
 	close(workerLaunched)
 	for {
 		select {
@@ -79,15 +79,15 @@ func (p *gwool) acceptWork(workerLaunched chan struct{}) {
 	}
 }
 
-func (p *gwool) Finish() {
+func (p *Gwool) Finish() {
 	close(p.stopSignal)
 	p.wg.Wait()
 }
 
-func (p *gwool) NumOfWorkers() int {
+func (p *Gwool) NumOfWorkers() int {
 	return p.numWorkers
 }
 
-func (p *gwool) Work() {
+func (p *Gwool) Work() {
 	<-p.stopSignal
 }

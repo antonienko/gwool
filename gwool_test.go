@@ -65,3 +65,26 @@ func TestWorkersPerformWorkAndWaitToFinish(t *testing.T) {
 		t.Errorf("repeated value %s", actualValues[1])
 	}
 }
+
+func TestWorkersDieAfterTimeoutAndWorkerIsCreatedWhenNoWorkersLeftAndJobAdded(t *testing.T) {
+	makeWork := make(chan struct{})
+	doneChan := make(chan string, 1)
+	p := NewPool(1, make(chan GwoolJob), blockingThenDonePerformer{makeWork, doneChan}, 1*time.Millisecond)
+	go func() {
+		time.Sleep(2 * time.Millisecond)
+		if expected, actual := 0, p.numWorkers; expected != actual {
+			t.Errorf("expected %d workers, got %d", expected, actual)
+		}
+		p.QueueJob("done1")
+		if expected, actual := 1, p.numWorkers; expected != actual {
+			t.Errorf("expected %d workers, got %d", expected, actual)
+		}
+		go p.Finish()
+		close(makeWork)
+	}()
+	p.Work()
+	val := <-doneChan
+	if val != "done1" {
+		t.Errorf("unexpected value %s", val)
+	}
+}

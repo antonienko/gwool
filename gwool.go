@@ -5,26 +5,26 @@ import (
 	"time"
 )
 
-type GwoolWorker interface {
-	Perform(job GwoolJob)
+type Worker interface {
+	Perform(job Job)
 }
 
-type GwoolJob interface{}
+type Job interface{}
 
 type Pool struct {
-	jobsQueue     chan GwoolJob
-	worker        GwoolWorker
+	jobsQueue     chan Job
+	worker        Worker
 	workerTimeout time.Duration
 	numWorkers    int
 	minWorkers    int
 	stopSignal    chan struct{}
-	wg sync.WaitGroup
+	wg            sync.WaitGroup
 }
 
 func NewPool(
 	initialNoOfWorkers int,
-	jobsQueue chan GwoolJob,
-	performer GwoolWorker,
+	jobsQueue chan Job,
+	performer Worker,
 	workerTimeout time.Duration,
 ) *Pool {
 	p := &Pool{
@@ -39,7 +39,7 @@ func NewPool(
 	return p
 }
 
-func (p *Pool) QueueJob(job GwoolJob) {
+func (p *Pool) QueueJob(job Job) {
 	if p.numWorkers == 0 {
 		p.launchWorker()
 	}

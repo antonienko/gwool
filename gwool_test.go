@@ -7,20 +7,20 @@ import (
 
 type emptyPerformer struct{}
 
-func (ep emptyPerformer) Perform(job GwoolJob) {}
+func (ep emptyPerformer) Perform(job Job) {}
 
 type blockingThenDonePerformer struct {
 	makeWork chan struct{}
 	doneChan chan string
 }
 
-func (btdp blockingThenDonePerformer) Perform(job GwoolJob) {
+func (btdp blockingThenDonePerformer) Perform(job Job) {
 	<-btdp.makeWork
 	btdp.doneChan <- (job).(string)
 }
 
 func TestCreationCreatesWorkersAndFinishDestroysThem(t *testing.T) {
-	p := NewPool(10, make(chan GwoolJob), emptyPerformer{}, 1*time.Second)
+	p := NewPool(10, make(chan Job), emptyPerformer{}, 1*time.Second)
 	if exp, nworkers := 10, p.NumOfWorkers(); exp != nworkers {
 		t.Errorf("wrong number of workers created: expected %d got %d", exp, nworkers)
 	}
@@ -33,7 +33,7 @@ func TestCreationCreatesWorkersAndFinishDestroysThem(t *testing.T) {
 func TestWorkersPerformWorkAndWaitToFinish(t *testing.T) {
 	makeWork := make(chan struct{})
 	doneChan := make(chan string, 2)
-	p := NewPool(2, make(chan GwoolJob), blockingThenDonePerformer{makeWork, doneChan}, 10*time.Second)
+	p := NewPool(2, make(chan Job), blockingThenDonePerformer{makeWork, doneChan}, 10*time.Second)
 	go func() {
 		p.QueueJob("done1")
 		p.QueueJob("done2")
@@ -69,7 +69,7 @@ func TestWorkersPerformWorkAndWaitToFinish(t *testing.T) {
 func TestWorkersDieAfterTimeoutAndWorkerIsCreatedWhenNoWorkersLeftAndJobAdded(t *testing.T) {
 	makeWork := make(chan struct{})
 	doneChan := make(chan string, 1)
-	p := NewPool(1, make(chan GwoolJob), blockingThenDonePerformer{makeWork, doneChan}, 1*time.Millisecond)
+	p := NewPool(1, make(chan Job), blockingThenDonePerformer{makeWork, doneChan}, 1*time.Millisecond)
 	go func() {
 		time.Sleep(10 * time.Millisecond)
 		if expected, actual := 0, p.NumOfWorkers(); expected != actual {

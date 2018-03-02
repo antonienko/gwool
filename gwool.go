@@ -18,7 +18,7 @@ type gwool struct {
 	numWorkers    int
 	minWorkers    int
 	stopSignal    chan struct{}
-	sync.WaitGroup
+	wg sync.WaitGroup
 }
 
 func NewPool(
@@ -52,13 +52,13 @@ func (p *gwool) QueueJob(job GwoolJob) {
 }
 
 func (p *gwool) launchWorker() {
-	p.Add(1)
+	p.wg.Add(1)
 	p.numWorkers++
 	workerLaunched := make(chan struct{})
 	go func() {
 		defer func() {
 			p.numWorkers--
-			p.Done()
+			p.wg.Done()
 		}()
 		p.acceptWork(workerLaunched)
 	}()
@@ -81,7 +81,7 @@ func (p *gwool) acceptWork(workerLaunched chan struct{}) {
 
 func (p *gwool) Finish() {
 	close(p.stopSignal)
-	p.Wait()
+	p.wg.Wait()
 }
 
 func (p *gwool) NumOfWorkers() int {

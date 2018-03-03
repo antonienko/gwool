@@ -1,4 +1,4 @@
-#GWOOL
+# GWOOL
 
 GWOOL stands for Golang Worker pOOL, a very simplistic and basic worker pool, with a naive auto-scaling approach. 
 

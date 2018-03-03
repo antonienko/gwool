@@ -19,16 +19,17 @@ type Pool struct {
 	minWorkers    int
 	stopSignal    chan struct{}
 	wg            sync.WaitGroup
+	mux           sync.RWMutex
 }
 
 func NewPool(
 	initialNoOfWorkers int,
-	jobsQueue chan Job,
+	queueSize int,
 	performer Worker,
 	workerTimeout time.Duration,
 ) *Pool {
 	p := &Pool{
-		jobsQueue:     jobsQueue,
+		jobsQueue:     make(chan Job, queueSize),
 		worker:        performer,
 		workerTimeout: workerTimeout,
 		stopSignal:    make(chan struct{}),
@@ -53,11 +54,15 @@ func (p *Pool) QueueJob(job Job) {
 
 func (p *Pool) launchWorker() {
 	p.wg.Add(1)
+	p.mux.Lock()
 	p.numWorkers++
+	p.mux.Unlock()
 	workerLaunched := make(chan struct{})
 	go func() {
 		defer func() {
+			p.mux.Lock()
 			p.numWorkers--
+			p.mux.Unlock()
 			p.wg.Done()
 		}()
 		p.acceptWork(workerLaunched)
@@ -85,7 +90,10 @@ func (p *Pool) Finish() {
 }
 
 func (p *Pool) NumOfWorkers() int {
-	return p.numWorkers
+	p.mux.RLock()
+	result := p.numWorkers
+	p.mux.RUnlock()
+	return result
 }
 
 func (p *Pool) Work() {
